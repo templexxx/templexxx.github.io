@@ -1,0 +1,65 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+        <title>3,317,044,064,679,887,385,961,980是一个素数吗？</title>
+    </script>
+</head>
+<body class="">
+    <h2>3,317,044,064,679,887,385,961,980是一个素数吗？</h2>
+    <h3>Wanna play a game?</h3>
+    <p>有一位有钱任性的还是个波霸的美女土豪找大家玩游戏，游戏规则如下：</p>
+    <p>土豪（波霸）给你若干张100元钱，其中有几张会是残破的。</p>
+    <p>比如这次给你200个亿，然后土豪会宣布这样的命令，找出2亿张100元以内最近的残破人民币。土豪这边有一张表，记录着其中第几张是残破的以作验证。最快找到的幸运儿会得到这200亿和土豪及其闺蜜的香吻。其他人没有奖励也没有惩罚。</p>
+    <img src="http://upload-images.jianshu.io/upload_images/650020-89a5f89d1aac3be3.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240/q/100" width="80%">
+    <p>看上去这样稳赚不赔的游戏，来玩的人自然是非常多，他们排起的长队跨过山，跨过大海，无惧狂风、不畏暴雨、烈日当做花朵在招手，在严冬中把自己比作傲骨的梅花。这条长龙首尾相连，靠人力证明了地球是圆的，外星人将这条队伍亲切地称为“地球的裤腰带”。</p>
+    <p>那是一个春天，你终于踏进了土豪家的大门，坐上了游戏桌。那么，什么样的策略能让你脱颖而出？</p>
+    <p>最笨的办法当然是从第一张开始往上数，灵光一点的办法是从最后一张往前数。</p>
+    <p>然而，你作为人群中最闪耀的那颗星，已经为这个游戏做了充分的背景调查，你了解到这位名位费殿的美女，小名叫素素。祖上是一位数学传奇——费马。</p>
+    <p>没错！真相只有一个——残破人民币的分布一定遵守素数分布规律。</p>
+    <p>这就是天才的直觉。</p>
+    而且你听说了，但凡还能凑合上网的计算机不到0.3毫秒的时间就可以让你赢完土豪所有的积蓄（2^32张100元），1毫秒的时间可以吃下几亿个这样的土豪。
+    那么现在，所有的问题只剩下如何写这个程序了。
+    很容易发现素数分布肯定是越来越稀疏的。那么通过寻找这个稀疏的规律就可以发现素数密度的算法。
+    假设找到了范围，我们只需要能够判断一个数是不是素数的能力就行了。
+    世界就是这么充满着惊喜——这两种方法都已经有了
+    <h3>素数分布规律</h3>
+    <p class="p1"><span class="s1">在拿到分布规律之前，我们先可以自行猜想一番。如果中途你写出了这个规律，或者得到了较为精确的猜想，或许你可以查查祖上是否有个叫高斯的男子。</span></p>
+    <p class="p1"><span class="s1">首先我们用笨办法，即试除法，找出一系列素数，我这里用删除线标注出来：</span></p>
+    <p class="p1"=""><span class="s1">&nbsp;1 </span><span class="s2"><b>2 3</b></span><span class="s1"> 4 </span><span class="s2">5</span><span class="s1"> 6 </span><span class="s2">7</span><span class="s1"> 8 9 10 </span><span class="s2">11</span><span class="s1"> 12 </span><span class="s2">13</span><span class="s1"> 14 15 16 </span><span class="s2">17</span><span class="s1"> 18 19 20...&nbsp;</span></p>
+    <p class="p1"=""><span class="s1">把前n个自然数中的素数个数记做An，则A1=0，A2=1, A3=A4=2, A5=A6=3, A7=A8=A9=A10=4, A11=A12=5, A13=A14=A15=A16=6,A17=A18=19=A20=7...</span></p>
+    <p class="p1"=""><span class="s1">依次类推，持续穷举下去。然后我们用An/n就可以得到素数的密度了</span></p>
+    <p class="p1"><span class="s1">好啦。猜猜看吧</span></p>
+    <p class="p1"><span class="s1">我当初连猜的机会也没有，因为我不小心看到了素数定理。</span></p>
+    <p class="p1"><span class="s1">高斯是这样猜的：</span></p>
+    <p class="p1"><span class="s1">An/n 渐进等于 1/ln n</span></p>
+    <p class="p1"><span class="s1">是的，他猜且猜对了。关于这个定理的证明，受限篇幅，我换个时间再来细细品味它。</span></p>
+    <p class="p1"><span class="s1">有了素数的密度，那么n内的素数个数很好得到了：</span></p>
+    <p class="p1"><span class="s1">n/ln n</span></p>
+    <p></p>
+    <p class="p1"><span class="s1">关于素数个数，人类还有个更好的估计(实际上还有更好的估计，但这里够了）：</span></p>
+    <img src="http://upload-images.jianshu.io/upload_images/650020-3aa4d0a275f32303.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240/q/100" width="80%">
+    <p class="p1"><br></p>
+    <p class="p1"><span class="s1">其中Li(x)是</span></p>
+    <img src="http://upload-images.jianshu.io/upload_images/650020-17154989becf01cf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240/q/100" width="80%">
+    <p class="p4"><span class="s1">我们需要展开它，方才容易写到程序里：</span></p>
+    <img src="http://upload-images.jianshu.io/upload_images/650020-5200b9990066d151.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240/q/100" width="80%">
+    <p class="p1"><span class="s1">我们用 n/li(n) 就可以得到素数的密度估计值了</span></p>
+    <p class="p1"><span class="s1">我们已经知道n/li(n)为素数密度，也就大致意味着每隔n/li(n)会出现一个素数。</span></p>
+    <p class="p1"><span class="s1">那么我们不妨用n - n/li(n) 作为第一次猜测。</span></p>
+    <p class="p1"><span class="s1">当然，这个数还需要一定的处理，因为它并不是自然数。最直接的思路，是四舍五入它，然后转换成整数。</span></p>
+    <p>如果n特别大，最好先对n/li(n)做整数处理。关于这一点，大家自己想想看为什么吧。</p>
+    <h3>验证一个数是否为素数</h3>
+    <p>邮箱: lucas1x1x@gmail.com</p>
+    <p>知乎1: temple x</p>
+</a>
+而且你听说了，但凡还能凑合上网的计算机不到0.3毫秒的时间就可以让你赢完土豪所有的积蓄（2^32张100元），1毫秒的时间可以吃下几亿个这样的土豪。
+那么现在，所有的问题只剩下如何写这个程序了。
+很容易发现素数分布肯定是越来越稀疏的。那么通过寻找这个稀疏的规律就可以发现素数密度的算法。
+假设找到了范围，我们只需要能够判断一个数是不是素数的能力就行了。
+世界就是这么充满着惊喜——这两种方法都已经有了
+<h3>联系我</h3>
+<p>邮箱: lucas1x1x@gmail.com</p>
+<p>知乎1: temple x</p>
