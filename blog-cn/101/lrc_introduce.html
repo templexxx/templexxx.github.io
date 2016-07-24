@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+        <title>LRC的设计与实现介绍</title>
+</head>
+<body>
+    <h2>LRC的设计与实现介绍</h2>
+    <h3>沉重的RS</h3>
+    <p>RS，即Reed-Solomon codes已经问世50余年了，依然活跃于各个领域。应用于存储上也是有长长的历史了，只不过作为磁盘自己的纠错功能我们在使用中感受不到罢了。</p>
+    <p>然而直接使用RS有一个不可避免的问题即修复时的带宽占用问题。你的原始数据有多少shards，恢复一份数据即需要相应倍数的数据读取。</p>
+    <p>鉴于这个问题，我们已经有了成熟的解决方案，即LRC（Locally Repairable Codes)</p>
+    <h3>LRC的应用</h3>
+    <p>我这里先谈谈其的实践成果，以免上来就释放数学内容会引起读者的不适。</p>
+    <p>大规模的公司有Facebook, Microsoft,听闻在用有的Google, Amazon.就连Ceph也有了LRC的plugin（可惜在其介绍页面上，可能是由于LRC带来的激动，导致夸大了RS的修复代价）</p>
+    <p>就目前来看，Facebook的实现最为高级。在接下来的分析中，我将给出一个恰当的矩阵来完成类似的“高级”设计。</p>
+    <p>基本上我可以说，由RS转向LRC是大型存储数据中心的必由之路了。</p>
+    <h3>LRC的设计</h3>
+    <p>LRC不能说是全新的设计，它还是基于RS的。只是在RS得到的parity之外，再对所有shards分组各算出一份冗余出来。</p>
+    <p>对于一组shard来说，单盘故障是最为常见的。在这种情况下，LRC仅需利用分组中的冗余块即可恢复数据。一般情况下，我们会将data shards拆分成两组，这意味着修复时可以节约一半的带宽消耗。</p>
+    <p>这样设计的缺陷很明显——多了好几份冗余成本。我之前提到Facebook实现最先进，是因为他们选取了合适的编码系数，使得其中一份本地冗余可以通过其他的数据计算得到，如图所示：</p>
+    <img src="http://templex.xyz/images/lrc_introuduce/facebook.jpeg" width="80%">
+    <p></p>
+    <p>小明很惊讶：“医师啊，您这是医死过多少人才练得这般神功啊?”</p>
+    <p>医师谦虚的摆摆手：“这个我还刚上路，我还不如白起弄死的人多咧?”这话音刚落，小明啐出一口硅胶，一命呜呼了。</p>
+    <p>万幸的是小明家里的女金刚已经改嫁了，否则江湖上又要掀起一阵血雨腥风。</p>
+    <img src="http://templex.xyz/images/doctor/kingkong.png" width="80%">
+    <h3>发人深省</h3>
+    <p>小明的去世引发了公司内部BBS的激烈讨论，一方面是没人干活了，另外一方面是这活得找谁干？我进去插了个嘴：这非科班的医生有倒是有，比如刚才那位武林盟主也只是美好的童话故事。但是非科班的程序员可就一抓一大把了。莫非是写程序太简单了？</p>
+    <p>然而，事实是因为写错程序至多费电，但下错药可是要命。在学习编程的过程中，错上个万把次方才能有所成。这样换算下来，分给我一万条人命练手，想必我也能成为一代名医。</p>
+    <p>很有意思的是，学医似乎对成为一名程序员有神秘的加成。比如我听说，妇科就是一培养信息安全人才的国家重点专业。</p>
+    <p>经常听一些有声望的人讲，搞安全的个性务必要猥琐，还需善于深入发掘什么洞来着。我这一琢磨，就觉得妇科出来的安全专员特别的靠谱。</p>
+    </body>
+    </html>
