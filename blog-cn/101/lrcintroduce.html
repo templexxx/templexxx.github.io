@@ -27,7 +27,7 @@
     <img src="http://templex.xyz/images/lrc_introduce/encode.jpeg" width="80%">
     <p>我们首先生成一个encode matrix位于矩阵上部，用来使得encode之后数据保持不变,即systematic codes.接下来我们在其下部放置一个Vandermonde matrix,用它来和data matrix相乘。到这一步都没什么特别的，就是RS的一般过程。</p>
     <p>那这个encode matrix到底长什么样呢？我们来一睹芳容：</p>
-    <img src="http://templex.xyz/images/lrc_introduce/10_4_matrix.jpeg" width="80%">
+    <img src="http://templex.xyz/images/lrc_introduce/10-4-matrix.jpeg" width="80%">
     <p>想必线性代数还有映像的朋友在看到我的矩阵选择的时候一定已经发现了“抹掉”的奥秘。</p>
     <p>第一份parity实际上就是data shards的和，那么当我们保存了两份data shard的和之一后，就可以通过这两份数据计算得到另外一份。因此其中一份本地冗余就被没有必要存下来了。</p>
     <p>事情就是这么简单，或许部分读者会感到失望。但有的时候看似复杂的结果背后其原理就是这么清晰明了。</p>
