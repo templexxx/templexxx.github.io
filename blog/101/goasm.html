@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+        <title>使用汇编为Golang加速</title>
+</head>
+<body>
+    <h2>使用汇编为Golang加速</h2>
+    <h3>沉重的RS</h3>
+    <p>RS，即Reed-Solomon codes已经问世50余年了，依然活跃于各个领域。应用于存储上也是有长长的历史了，只不过作为磁盘自己的纠错功能我们在使用中感受不到罢了。</p>
+    <p>然而直接使用RS有一个不可避免的问题即修复时的带宽占用问题。你的原始数据有多少shards，恢复一份数据即需要相应倍数的数据读取。</p>
+    <p>鉴于这个问题，我们已经有了成熟的解决方案，即LRC（Locally Repairable Codes)</p>
+    <h3>LRC的应用</h3>
+    <p>我这里先谈谈其的实践成果，以免上来就释放数学内容会引起读者的不适。</p>
+    <p>大规模的公司有Facebook, Microsoft,听闻在用有的Google, Amazon.就连Ceph也有了LRC的plugin（可惜在其介绍页面上，可能是由于LRC带来的激动，导致夸大了RS的修复代价）</p>
+    <p>就目前来看，Facebook的实现最为高级。在接下来的分析中，我将给出一个恰当的矩阵来完成类似的“高级”设计。</p>
+    <p>基本上我可以说，由RS转向LRC是大型存储数据中心的必由之路了。</p>
+    <h3>LRC的设计</h3>
+    <p>LRC不能说是全新的设计，它还是基于RS的。只是在RS得到的parity之外，再对所有shards分组各算出一份冗余出来。</p>
+    <p>对于一组shard来说，单盘故障是最为常见的。在这种情况下，LRC仅需利用分组中的冗余块即可恢复数据。一般情况下，我们会将data shards拆分成两组，这意味着修复时可以节约一半的带宽消耗。</p>
+    <p>这样设计的缺陷很明显——多了好几份冗余成本。我之前提到Facebook实现最先进，是因为他们选取了合适的编码系数，使得其中一份本地冗余可以通过其他的数据计算得到，如图所示：</p>
+    <img src="http://templex.xyz/images/lrc_introduce/facebook.jpeg" width="80%">
+    <p>如何“抹掉”一份本地冗余</p>
+    <p>LRC的第一步就是RS，因此我们先来看看parity的生成过程（为了和facebook的方案做直接对比,选用10,4的方案）：</p>
+    <img src="http://templex.xyz/images/lrc_introduce/encode.jpeg" width="80%">
+    <p>我们首先生成一个encode matrix位于矩阵上部，用来使得encode之后数据保持不变,即systematic codes.接下来我们在其下部放置一个Vandermonde matrix,用它来和data matrix相乘。到这一步都没什么特别的，就是RS的一般过程。</p>
+    <p>那这个encode matrix到底长什么样呢？我们来一睹芳容：</p>
+    <img src="http://templex.xyz/images/lrc_introduce/10-4-matrix.jpeg" width="80%">
+    <p>想必线性代数还有映像的朋友在看到我的矩阵选择的时候一定已经发现了“抹掉”的奥秘。</p>
+    <p>第一份parity实际上就是data shards的和，那么当我们保存了两份data shard的和之一后，就可以通过这两份数据计算得到另外一份。因此其中一份本地冗余就被没有必要存下来了。</p>
+    <p>事情就是这么简单，或许部分读者会感到失望。但有的时候看似复杂的结果背后其原理就是这么清晰明了。</p>
+    <h3>动手做</h3>
+    <p>虽然知道了大致的方向，但实际做起来就没那么轻松了。</p>
+    <p>仅就存储领域而言，编码的速度提升几乎不构成吸引力了。目前的编码方案已经远远超过了网络的传输速度。</p>
+    <p>另外真正输出Erasure codes解决方案的，我们会发现除了巨型科技公司，就是科研人员了，门槛还是非常高的，再加上理论清晰，解决方案纯熟，后人造轮子是非常不现实的。</p>
+    <p>小公司里面仅Backblaze的Java版本比较出名，而Klaus Post根据Backblaze的成果写了Golang版本的RS library.</p>
+    <p>而我又根据Klaus Post的开源代码，修改得到了类似上文所展示的encode matrix</p>
+    <p>原先的代码有个令我费解的encode matrix生成过程被我修改掉了，我这里简单描述一下：</p>
+    <ol>
+    <li>首先生成一个vandermonde matrix</li>
+    <li>取该矩阵上部</li>
+    <li>对上部求逆矩阵</li>
+    <li>得到的逆矩阵与原先的vandermonde matrix相乘得到encode matrix</li>
+    </ol>
+    <p>而我的做法是直接生成一个单位矩阵，然后在其"拼接"一个经过筛选的vandermonde matrix.</p>
+    <p>关于这个问题我和Backblaze的研究人员也在网上进行过交流，他的说法是“The top part of the encoding matrix needs to be an identity matrix if you want the data shards to come through unchanged.”</p>
+    <p>那为何我不直接生成identity matrix呢？我一样能保证矩阵可逆。或许原先的步骤可以更好的满足一部分人对于非systematic codes的需要，但对于我来说就是多余的了，而且不方便我选择合适的系数来实现低冗余的LRC.</p>
+    <h3>初步测试</h3>
+    <p>测试步骤与思路如下：</p>
+    <ol>
+    <li>首先对数据进行LRC编码</li>
+    <li>计算其中一个data shard的摘要（我这里选用的是七牛的qetag算法），并标记丢失。如RS(10,4)中的第6个data shard</li>
+    <li>将第一组data shard的parity与RS的parity1分别指定为经过encode的数据，reconstructc出对于它们来说的第二份data shard</li>
+    <li>通过上一步得到的data shard即为x6至x10的parity,通过x7至x10的数据与这份parity，恢复出x6</li>
+    <li>计算新的x6的摘要与之前的数据做对比</li>
+    </ol>
+    <p>原先的结果（我这里是从0开始标记shard的）</p>
+    <img src="http://templex.xyz/images/lrc_introduce/old.jpeg" width="80%">
+    <p>通过LRC恢复得到的结果（我这里顺带打印了encode matrix)</p>
+    <img src="http://templex.xyz/images/lrc_introduce/new.jpeg" width="80%">
+    </body>
+    </html>
