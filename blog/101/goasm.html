@@ -32,5 +32,11 @@
     这个函数没有body。随后就可以再外部调用它了</li>
     </ol>
 
+    <h3>如何利用这项技术</h3>
+    <p>当你发现你的程序要用同样的指令对大量数据进行计算并且速度不理想的时候，就可以试试汇编。</p>
+    <p>编写汇编程序最重要的倒不是对指令的熟悉运用，毕竟这些都是可以查阅得到的。最关键的是必须搞清楚函数要用到哪些数据，分别从哪来的，他们会暂时存在哪，接下来会流向哪里？最终储存在什么地方？</p>
+    <p>简而言之就是掌控好数据流,接下来根据自己的需要翻阅Intel的文档去获取指令。为了避免golang不支持该指令的麻烦，可以查阅go的源代码下的/cmd/internal/obj/x86/anames.go这个文件，里面有其包含的所有汇编指令。</p>
+    <p>倘若非那条golang不支持的指令不可的话，可以这里提到的方法：<a href="https://blog.klauspost.com/adding-unsupported-instructions-in-golang-assembler/">adding-unsupported-instructions-in-golang-assembler</a></p>
+    <p>或者用现成的转换工具：<a href="https://github.com/minio/asm2plan9s">asm2plan9s</a></p>
     </body>
     </html>
