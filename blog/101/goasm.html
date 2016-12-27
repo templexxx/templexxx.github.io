@@ -27,7 +27,7 @@
     <ol>
     <li>它这里没使用AVX而使用SSE，主要原因我认为是Golang不识别某些AVX指令</li>
     <li>使用NOSPILT这个flag，需要在文件头部加入：<code>#include "textflag.h"</code>,或者直接填4</li>
-    <li>末尾的SFENCE指令，其作用是确保数据全部写进了内存</li>
+    <li>末尾的SFENCE指令，其作用是确保数据全部写进了内存(但我感觉这里没有必要使用，有待考证)</li>
     <li>调用这个汇编函数的函数代码:<code>func Multiply(data []V4, m M4)</code>
     这个函数没有body。随后就可以再外部调用它了</li>
     </ol>
