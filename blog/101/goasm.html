@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+        <title>使用SIMD为Golang加速</title>
+</head>
+<body>
+    <h2>使用SIMD为Golang加速</h2>
+
+    <h3>汇编的门槛</h3>
+    <p>失去重重抽象的庇护，汇编看上去非常的丑陋。用汇编来编写大型程序简直难以想象，不过在这里，我们仅仅使用汇编来进行AMD64体系下的运算加速，这并不会特别困难。</p>
+    <p>Golang有自己的汇编语法，总体上是AT&T风格，即:</p>
+    <p>< opcode source destination ></p>
+    <p>可以粗暴的认为这是汇编语句的唯一语法。汇编的简单性就在这里，只要你明确了你所需要的指令，数据源以及存储的位置，你就可以写出正确的代码。</p>
+
+    <h3>Golang对汇编的封装</h3>
+    <p>Golang的封装使得使用汇编变得更加便利，减轻了不少头脑负担。</p>
+    <p>这里是Golang自己的文档，写的非常简略，但针对伪寄存器和flag的说明已经足够了：<a href="https://golang.org/doc/asm">godoc</a></p>
+    <p>通用寄存器分别是AX BX CX DX SI DI BP SP R8-R15。（虽然这些寄存器有其传统用法，但在寄存器不够用的情况下并不用严格依照传统）</p>
+    <p>64位下128bit寄存器为X0-X15,256bit寄存器为Y0-Y15。</p>
+
+    <h3>SIMD</h3>
+    <p>这里有一份不错的代码示例：<a href="https://goroutines.com/asm">simd_example</a></p>
+    <p>我借它来进行一些补充说明：</p>
+    <ol>
+    <li>它这里没使用AVX而使用SSE，主要原因我认为是当时的Golang不识别某些AVX指令</li>
+    <li>使用NOSPILT这个flag，需要在文件头部加入：<code>#include "textflag.h"</code>,或者直接填4</li>
+    <li>末尾的SFENCE指令，我感觉这里没有必要使用)</li>
+    <li>调用这个汇编函数的函数代码:<code>func Multiply(data []V4, m M4)</code>
+    这个函数没有body。随后就可以再外部调用它了</li>
+    </ol>
+
+    <h3>如何利用这项技术</h3>
+    <p>当你发现你的程序要用同样的指令对大量数据进行计算并且速度不理想的时候，就可以试试汇编。</p>
+    <p>编写汇编程序最重要的倒不是对指令的熟悉运用，毕竟这些都是可以查阅得到的。最关键的是必须搞清楚函数要用到哪些数据，分别从哪来的，他们会暂时存在哪，接下来会流向哪里？最终储存在什么地方？</p>
+    <p>简而言之就是掌控好数据流,接下来根据自己的需要翻阅Intel的文档去获取指令。为了避免golang不支持该指令的麻烦，可以查阅go的源代码下的/cmd/internal/obj/x86/anames.go这个文件，里面有其包含的所有汇编指令。</p>
+    <p>倘若非那条golang不支持的指令不可的话，可以这里提到的方法：<a href="https://blog.klauspost.com/adding-unsupported-instructions-in-golang-assembler/">adding-unsupported-instructions-in-golang-assembler</a></p>
+    <p>或者用现成的转换工具：<a href="https://github.com/minio/asm2plan9s">asm2plan9s</a></p>
+    </body>
+    </html>
