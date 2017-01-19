@@ -4,12 +4,12 @@
         <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
         <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
         <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
-        <title>写了一个Reed-Solomon code引擎</title>
+        <title>最快的Reed-Solomon code引擎？</title>
 </head>
 <body>
     <h2>ReedSolomon</h2>
     <h3>为什么要造轮子？</h3>
-    <p>Reed-Solomon codes已经问世50余年了，是门非常成熟的并且应用广泛的技术。</p>
+    <p>Reed-Solomon code已经问世50余年了，是门非常成熟的并且应用广泛的技术。</p>
     <p>在优化方面，公认的最佳做法就是利用SIMD技术加速(具体的方法我随后展开)。看上去其并不适宜重新造轮子，而且新轮子极大可能远远不如老轮子，但我觉得我有机会写出非常快的程序。</p>
     <p>我的初衷是通过这个过程学习一下群，域，矩阵等数学知识以及它们在计算机上的应用。在阅读一些著名的开源库的时候，我发现有一些疑问很多人都有，但大家似乎都没有很好的回答过，似乎这些问题非常的高深。这让我觉得很不应该，我本能的认为这些问题应该没那么难。于是在解决这些问题的过程中，我写完了这个库。</p>
     <p>最后的原因和我个人相关，作为一名销售转技术的非专业人士，在这个慢慢转变的过程中吃到了很多苦头。比如碰到一些关注度非常低的小问题，要找到满意的解答几乎是不可能的。由于各种机缘巧合我对RS code产生了浓厚的兴趣，那么借这个机会我想减轻对此感兴趣的其他人的负担和痛苦，这也算是传播一点微小的能量。</p>
