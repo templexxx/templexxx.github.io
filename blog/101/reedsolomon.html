@@ -16,7 +16,7 @@
     <p>先前有提到SIMD技术，这是一种非常自然的选择。比如，利用AVX2每次可以处理32byte，这可比通用寄存器下的8byte要厉害4倍（实际效果远超4倍）。有这样的技术没理由不想办法使用它。</p>
     <p>在SIMD技术之前，最快的解决方案应该是James S. Plank老爷子提出的，详见他的论文<a href="https://pdfs.semanticscholar.org/fad6/a8df156c712a512d1cf7347c1ae7129bf5aa.pdf">CRS</a>,很遗憾我没有认真分析过其原理，大意就是将字节查表运算转换成了关于位的异或运算。</p>
     <p>由于我是先阅读了SIMD加速RS的论文，已经被这种方式的巨大威力所折服。原先的计算瓶颈已经转移到IO上了，因此我也没有必要去深究以异或代替RS复杂运算这种曲线救国的方式了。</p>
-    <p>最后我选择Golang作为编程语言，主要有这么几个原因，一是其并发模型比较简单，二是其汇编也友好，可以方便的利用SIMD技术。关于Golang汇编的初探可以参考我的这篇博文：<a href="http://www.templex.xyz/blog/101/goasm.html">使用SIMD为Golang加速</a></p>
+    <p>最后我选择Golang作为编程语言，主要有这么几个原因，一是性能相对还不错，二是其汇编也友好，可以方便的利用SIMD技术。关于Golang汇编的初探可以参考我的这篇博文：<a href="http://www.templex.xyz/blog/101/goasm.html">使用SIMD为Golang加速</a></p>
     <h3>站在巨人的肩膀上</h3>
     <p>最早接触的是Jerasure的实现以及一些科普性的文章，那个时候连hello world都不会写，只留下了粗浅的印象。</p>
     <p>后来逐渐发现了更多的开源库,其中:<a href="https://github.com/klauspost/reedsolomon">Klauspost</a>参考<a href="https://github.com/Backblaze/JavaReedSolomon/">Backblaze</a>而实现。而我又参考了klauspost的实现。</p>
@@ -72,7 +72,9 @@
     <li>另外在Intel的文档中有提到“Please note that the library assumes 1MB = 1,000,000 bytes in reported performance ﬁgures”。这一点上与golang的benchmark test框架是一致的。</li>
     <li>其perf test是运行在单核下的</li>
     </ol>
-    <p>最终测下来，性能差不了太多。主要原因是大家的核心思想均来自上面我提到的论文，因此不会有质差别。至于我与Intel跑的比别人快的原因也是一致的，即对CPU Cache命中率的重视。性能有差距的原因则是我们的上层逻辑有非常大的差别以及在汇编优化上显然Intel会更胜一筹，比如我在上层做了更多的抽象，更加的接近矩阵运算的本来面貌，而Intel的策略是把工作传向了底下的汇编。因此Intel不得不根据parity数量分别写相应的汇编代码，4为上界，跑完4的循环switch3,2,1直到剩余parity为0退出计算过程。这样细致的优化取得了性能上的胜利。</p>
+    <p>我这里放一份在AWS上跑的测试数据，采用的是10+4的方案（测试平台： AWS t2.micro Intel(R) Xeon(R) CPU E5-2676 v3 @ 2.40GHz, Memory 1GB）：</p>
+    <img src="http://templex.xyz/images/reedsolomon/isal.jpg" width="80%">
+    <p>两份代码性能在伯仲之间，对于大文件来说intel会更优秀一点。大家的核心思想均来自上面我提到的论文，因此不会有质差别。至于我与Intel跑的比别人快的原因也是一致的，即对CPU Cache命中率的重视。性能有差距的原因则是我们的上层逻辑有非常大的差别以及在汇编优化上显然Intel会更胜一筹，比如我在上层做了更多的抽象，更加的接近矩阵运算的本来面貌，而Intel的策略是把工作传向了底下的汇编。因此Intel不得不根据parity数量分别写相应的汇编代码，然后一层层做encode，直到剩余parity为0退出计算过程。这样细致的优化取得了性能上的胜利。</p>
     <p>关于通过对data shard切片优化性能的问题，我在上面并没有展开，下面我们来一起分析一下为什么这样的调整会对性能产生巨大影响。</p>
     <p>我们再来回顾一下冗余块的计算过程，计算过程中读/写的数据量非常大，若干倍于我们传入以及得到的数据。奥秘就在这里了，我们要争取减少向内存读写数据，尽量在缓存中命中它。</p>
     <p>对于一次计算循环（见汇编部分代码）来说，读取的下一份冗余数据均与上一步的写入的内存地址不相同。这里要感谢伟大的乱序执行技术，对于这样的情景乱序执行会将率先执行下一步的读操作，再加上store buffer技术，更新的冗余数据并没有立即被写入内存，如此反复，冗余数据在cache与CPU之间跑来跑去，最终真正被执行写入内存的数据只有其中的一部份。</p>
