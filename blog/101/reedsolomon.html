@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <link href="./main.css" rel="stylesheet" type="text/css">
+        <link href="http://templex.xyz/main.css" rel="stylesheet" type="text/css">
         <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
         <link rel="shortcut icon" href="./images/3x3.jpg">
         <title>写一个Reed-Solomon code引擎</title>
@@ -30,7 +30,7 @@
     <p>有了矩阵的基础，我们对选择编码矩阵也有了基本的认识，无非就是要保证线性无关和任意子矩阵可逆。我在代码中使用的是Cauchy matrix,相较于传统的Vandermonde matrix，其使用起来更为便利，直接拼接单位矩阵就可以满足我们所需要的性质。</p>
     <p>数学的部分学习过程基本讲完了，还有一丁点数学相关的内容是和优化相关的。非常的简单而优雅，寥寥几句就可以阐明核心,但我还是推荐大家读一下论文<a href="http://www.kaymgee.com/Kevin_Greenan/Publications_files/plank-fast2013.pdf">Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions</a></p>
     <p>其加速的基本原理就是将一个byte以4bit为界限拆分成左右两个部分从而达到压缩乘法表的目的，如下图所示：</p>
-    <img src="./images/reedsolomon/leftright.jpg" width="80%">
+    <img src="../../images/reedsolomon/leftright.jpg" width="80%">
     <p>每一个4byte的乘法表只有16byte的长度，正好可以塞进XMM寄存器里。对于YMM寄存器，我们则可以通过复制塞两张表进去。这里才是SIMD能为RS服务的最大原因，也可以认为是为了使用SIMD带给RS性能的强大的“副作用”。原先我们需要到内存中去查询一张256*256byte的方阵，一方面操作内存本来就慢，另外一方面对于L1 data cache size为32byte的主流CPU来说，一个64KB的矩阵进进出出会严重污染接下来rs运算所需要缓存的数据。</p>
     <p>然后利用CPU提供的指令，以数据为MASK，对表进行重新排序，然后异或左右两个部分的值我们就得到了编码后的结果了。</p>
     <h3>代码分析</h3>
@@ -73,14 +73,14 @@
     <li>其perf test是运行在单核下的</li>
     </ol>
     <p>我这里放一份在AWS上跑的测试数据，采用的是10+4的方案（测试平台： AWS t2.micro Intel(R) Xeon(R) CPU E5-2676 v3 @ 2.40GHz, Memory 1GB）：</p>
-    <img src="./images/reedsolomon/isal.jpg" width="80%">
+    <img src="../../images/reedsolomon/isal.jpg" width="80%">
     <p>两份代码性能在伯仲之间，对于大文件来说intel会更优秀一点。大家的核心思想均来自上面我提到的论文，因此不会有质差别。至于我与Intel跑的比别人快的原因也是一致的，即对CPU Cache命中率的重视。性能有差距的原因则是我们的上层逻辑有非常大的差别以及在汇编优化上显然Intel会更胜一筹，比如我在上层做了更多的抽象，更加的接近矩阵运算的本来面貌，而Intel的策略是把工作传向了底下的汇编。因此Intel不得不根据parity数量分别写相应的汇编代码，然后一层层做encode，直到剩余parity为0退出计算过程。这样细致的优化取得了性能上的胜利。</p>
     <p>关于通过对data shard切片优化性能的问题，我在上面并没有展开，下面我们来一起分析一下为什么这样的调整会对性能产生巨大影响。</p>
     <p>我们再来回顾一下冗余块的计算过程，计算过程中读/写的数据量非常大，若干倍于我们传入以及得到的数据。奥秘就在这里了，我们要争取减少向内存读写数据，尽量在缓存中命中它。</p>
     <p>对于一次计算循环（见汇编部分代码）来说，读取的下一份冗余数据均与上一步的写入的内存地址不相同。这里要感谢伟大的乱序执行技术，对于这样的情景乱序执行会将率先执行下一步的读操作，再加上store buffer技术，更新的冗余数据并没有立即被写入内存，如此反复，冗余数据在cache与CPU之间跑来跑去，最终真正被执行写入内存的数据只有其中的一部份。</p>
 	<p>当我们的尺寸调整的比较恰当时，所需要的数据有不小的几率在L1 Cache中被命中，这样速度自然就被大大提升了。倘若尺寸太大，使得数据落入L2,L3,甚至塞不进缓存，速度自然就下来了。</p>
 	<p>比较细心的读者可能发现了，我在描述缓存工作的时候用了大量的“可能”二字。这主要是由于cache淘汰用的是pseudo-LRU算法，LRU对于CPU来说开销太大，而且有人研究过使用纯随机策略代替LRU,miss rate也只有1%左右的区别。所以我也不能确切的说在更新缓存的时候究竟发生了什么。</p>
-    <img src="./images/reedsolomon/cpuCacheRAM.jpg" width="80%">
+    <img src="../../images/reedsolomon/cpuCacheRAM.jpg" width="80%">
     <p>上面这张图大致反映了数据流动的情况，问题的核心也被表现的非常突出：即缓存命中率，缓存读取速度以及写优化。</p>
     <h3>代码</h3>
     <p>代码在这里：<a href="https://github.com/templexxx/reedsolomon">reedsolomon</a></p>
