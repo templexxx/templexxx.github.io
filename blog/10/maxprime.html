@@ -1,76 +1,82 @@
 <html>
     <head>
+
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
-        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
         <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+
         <title>3,317,044,064,679,887,385,961,980之内最大的素数是？</title>
-</head>
-<body>
-    <div style="margin: 2% 5% 2% 5%">
-            <table>
+
+    </head>
+
+    <body>
+        <div style="margin: 2% 5% 2% 5%">
+            <table width="80%">
                 <tr>
                     <td width="60%">
                         <div style="padding: 2% 8% 5% 8%; border: 1px solid LightGrey;">
+                        <h2>3,317,044,064,679,887,385,961,980之内最大的素数是？</h2>
+                        <h3>Guess</h3>
+                            <p>面对这样一个大数，要找到其范围内最大的素数所需要的计算量是非常之大的。</p>
+                            <p>很容易发现素数的密度是越来越稀的，倘若我们能够获得素数分布的大致规律再加上
+                                素性检测的方法，我们就能相对快的找到一个大数之内最大的素数。</p>
+                            <p>关于素数分布的规律高斯给过一个，另外还有更加“精确”的，在这里我就不再赘述。</p>
+                            <p>现在的问题仅是素性检测了。</p>
+                            <h3>验证一个数是否为素数</h3>
+                            <p>有这么一个公式接近素性判定的功能</p>
+                            <p>如果p是任意一个不能整除整数a的素数，那么</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-3a28287a86e5fc54.png" width="40%" height="50px">
+                            <p>然而存在这样一些合数，对于所有跟p互质的整数a，都满足费马小定理。这样的合数人类
+                                称它为开迈克尔数。</p>
+                            <p>对于足够大的n，1-n内卡迈克尔数至少有：n的2/7次方个</p>
 
-    <h2>3,317,044,064,679,887,385,961,980之内最大的素数是？</h2>
+                            <h3>提高素性判定的精确度</h3>
+                            <p>目前来看我提高素性判定精确度的途径大致有两条：</p>
+                            <p>显然我们可以利用费马小定理得到相关的推论，伪素数可以满足费马小定理但不一定能够
+                                满足其所有推论。</p>
+                            <p>另外，我们可以通过增加底数的方式来提高素数判定的可信度。</p>
+                            <p>首先我们对费马小定理进行推演</p>
+                            <p>我们将1移到左边，得到：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-365305936ee0ef10.png" width="40%" height="50px">
+                            <p>令p-1=（2^i）*b (b为一奇数，因为p是一个不能整除整数a的素数，p肯定是一个奇数，
+                                因此p-1为一偶数)：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-5f699743a92fb9a1.png" width="40%" height="50px">
+                            <p>同余符号两边持续开方，直到：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-cc56965411527023.png" width="40%" height="50px">
+                            <p>即：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-a5bd538c7791c681.png" width="40%" height="50px">
+                            <p>这是我们熟悉的x的平方减1的形式</p>
+                            <p>在这里，令c=a^b,同时我们保持c为小于p的整数。则c+1=p,或c-1=0。</p>
+                            <p>所以有：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-9d25e2746aa17b44.png" width="80%" height="50px">
+                            <p>即：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-2b4c06c16a807c41.png" width="80%" height="50px">
+                            <p>现在，我可以得到这样的推论：</p>
+                            <p>即对a的指数p-1不断提取2这个因子，直到和p-1是模p是同余的，如果与1同余，则继续
+                                提取2这个因子，直到2被提取完，最后与p-1或1是模p同余的。</p>
+                            <p>这种素数检测被称为 Miller-Rabin 测试。能通过Miller-Rabin测试的合数，我们称
+                                之为强伪素数。当a=2时，第一个强伪素数是2047。当同时检测a=2和a=3时，第一个
+                                强伪素数为1373653。我们可以发现，比单纯的费马检测要强有力的多。</p>
+                            <p>关于底数的选择，相关的研究和论文都比较多，有很多现成的结论可供使用。</p>
 
-    <h3>Guess</h3>
-    <p>面对这样一个大数，要找到其范围内最大的素数所需要的计算量是非常之大的。</p>
-    <p>很容易发现素数的密度是越来越稀的，倘若我们能够获得素数分布的大致规律再加上
-        素性检测的方法，我们就能相对快的找到一个大数之内最大的素数。</p>
-    <p>关于素数分布的规律高斯给过一个，另外还有更加“精确”的，在这里我就不再赘述。</p>
-    <p>现在的问题仅是素性检测了。</p>
-    <h3>验证一个数是否为素数</h3>
-    <p>有这么一个公式接近素性判定的功能</p>
-    <p>如果p是任意一个不能整除整数a的素数，那么</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-3a28287a86e5fc54.png" width="40%" height="50px">
-    <p>然而存在这样一些合数，对于所有跟p互质的整数a，都满足费马小定理。这样的合数人类
-        称它为开迈克尔数。</p>
-    <p>对于足够大的n，1-n内卡迈克尔数至少有：n的2/7次方个</p>
+                            <h3>幂模运算</h3>
+                            <p>我们将a的p-1次方展开：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-0cb510995572cc7a.png" width="80%" height="50px">
+                            <p>利用求模运算的性质，我们可将问题拆解为每一项的模的乘积。而具体的每一项我们可以
+                                通过转换成二进制以减小每一项的运算负担。听上去有点“混沌”，我这里将p-1展开：</p>
+                            <img src="http://www.templex.xyz/images/maxprime/650020-152304736726a21c.png" width="80%" height="50px">
+                            <p>a显然为0或1，因此计算量大大降低了</p>
 
-    <h3>提高素性判定的精确度</h3>
-    <p>目前来看我提高素性判定精确度的途径大致有两条：</p>
-    <p>显然我们可以利用费马小定理得到相关的推论，伪素数可以满足费马小定理但不一定能够
-        满足其所有推论。</p>
-    <p>另外，我们可以通过增加底数的方式来提高素数判定的可信度。</p>
-    <p>首先我们对费马小定理进行推演</p>
-    <p>我们将1移到左边，得到：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-365305936ee0ef10.png" width="40%" height="50px">
-    <p>令p-1=（2^i）*b (b为一奇数，因为p是一个不能整除整数a的素数，p肯定是一个奇数，
-        因此p-1为一偶数)：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-5f699743a92fb9a1.png" width="40%" height="50px">
-    <p>同余符号两边持续开方，直到：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-cc56965411527023.png" width="40%" height="50px">
-    <p>即：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-a5bd538c7791c681.png" width="40%" height="50px">
-    <p>这是我们熟悉的x的平方减1的形式</p>
-    <p>在这里，令c=a^b,同时我们保持c为小于p的整数。则c+1=p,或c-1=0。</p>
-    <p>所以有：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-9d25e2746aa17b44.png" width="80%" height="50px">
-    <p>即：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-2b4c06c16a807c41.png" width="80%" height="50px">
-    <p>现在，我可以得到这样的推论：</p>
-    <p>即对a的指数p-1不断提取2这个因子，直到和p-1是模p是同余的，如果与1同余，则继续
-        提取2这个因子，直到2被提取完，最后与p-1或1是模p同余的。</p>
-    <p>这种素数检测被称为 Miller-Rabin 测试。能通过Miller-Rabin测试的合数，我们称
-        之为强伪素数。当a=2时，第一个强伪素数是2047。当同时检测a=2和a=3时，第一个
-        强伪素数为1373653。我们可以发现，比单纯的费马检测要强有力的多。</p>
-    <p>关于底数的选择，相关的研究和论文都比较多，有很多现成的结论可供使用。</p>
+                            <h3>Codes</h3>
+                            <p>这是我独立完成的首个代码，在我的github上可以找到它<a href="http://github.com/templexxx/maxprime">maxprime</a></p>
+                            <p>如果要考虑扩大程序的应用范围，可以引入AKS</p>
 
-    <h3>幂模运算</h3>
-    <p>我们将a的p-1次方展开：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-0cb510995572cc7a.png" width="80%" height="50px">
-    <p>利用求模运算的性质，我们可将问题拆解为每一项的模的乘积。而具体的每一项我们可以
-        通过转换成二进制以减小每一项的运算负担。听上去有点“混沌”，我这里将p-1展开：</p>
-    <img src="http://www.templex.xyz/images/maxprime/650020-152304736726a21c.png" width="80%" height="50px">
-    <p>a显然为0或1，因此计算量大大降低了</p>
+                        </div>
 
-    <h3>Codes</h3>
-    <p>这是我独立完成的首个代码，在我的github上可以找到它<a href="http://github.com/templexxx/maxprime">maxprime</a></p>
-    <p>如果要考虑扩大程序的应用范围，可以引入AKS</p>
-
-
-</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </body>
-    </html>
+
+</html>
