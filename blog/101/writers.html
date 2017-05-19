@@ -20,8 +20,9 @@
                             <p>徐祥曦，七牛云工程师，独立开发了多套高性能纠删码/再生码编码引擎。</p>
                             <p>柳青，华中科技大学博士，研究方向为基于纠删码的分布式存储系统。</p>
                             <h3>前言</h3>
-                            <p>在上篇《如何选择纠删码编码引擎》中，我们简单了解了Reed-Solomon Codes（RS 码）的编／解码过程，以及编码引擎的评判标准。但并没有就具体实现进行展开，本篇作为《纠删码技术详解》的下篇，我们将主要探讨工程实现的问题。</p>
-                            <p>这里先简单提炼一下实现高性能纠删码引擎的要点：首先，根据编码理论将矩阵以及有限域的运算工程化，接下来主要通过SIMD指令集以及缓存优化工作来进行加速运算。也就是说，我们可以将RS的工程实现划分成两个基本步骤：</p>
+                            <p>在上篇《如何选择纠删码编码引擎》中，我们简单了解了Reed-Solomon Codes（RS 码）的编／解码过程,
+                            以及编码引擎的评判标准。但并没有就具体实现进行展开，本篇作为《纠删码技术详解》的下篇，我们将主要探讨工程实现的问题。
+                            这里先简单提炼一下实现高性能纠删码引擎的要点：首先，根据编码理论将矩阵以及有限域的运算工程化，接下来主要通过SIMD指令集以及缓存优化工作来进行加速运算。也就是说，我们可以将RS的工程实现划分成两个基本步骤：</p>
                             <ol>
                             <li>将数学理论工程化</li>
                             <li>进一步的工程优化</li>
@@ -30,7 +31,7 @@
                             <ol>
                             <li>有限域的基本概念，包括有限域的生成与运算</li>
                             <li>矩阵的性质以及乘法规则</li>
-                            <li>计算机体系结构中关于CPU指令以及缓存的理论<li>
+                            <li>计算机体系结构中关于CPU指令以及缓存的理论</li>
                             </ol>
                             <p>接下来，我们将根据这两个步骤并结合相关基础知识展开实现过程的阐述。</p>
                             <h3>理论工程化</h3>
@@ -50,72 +51,49 @@
                             <ol>
                             <li>在待求逆的矩阵右边拼接一个单位矩阵</li>
                             <li>进行高斯消元运算</li>
-                            <li>取得到的矩阵左边非单位矩阵的部分作为求逆的结果，如果不可逆则报错<li>
+                            <li>取得到的矩阵左边非单位矩阵的部分作为求逆的结果，如果不可逆则报错</li>
                             </ol>
                             <p>我们在实际的测试环境中发现，矩阵求逆的开销还是比较大的(大约 6000 ns/op)。考虑到在实际系统中，单盘数据重建往往需要几个小时或者更长（磁盘I/O 占据绝大部分时间），求逆计算时间可以忽略不计。</p>
                             <h3>进一步的工程优化</h3>
                             <h4>利用SIMD加速有限域运算</h4>
                             <p>从上一篇文章可知，有限域上的乘法是通过查表得到的，每个字节和生成矩阵中元素的乘法结果通过查表得到，图1 给出了按字节对原始数据进行编码的过程（生成多项式为 x^8 + x^4 + x^3 + x^2 + 1）。对于任意 1 字节来说，在GF(2^8)内有256种可能的值，所以没有元素对应的乘法表大小为 256 字节。每次查表可以进行一个字节数据的乘法运算，效率很低。</p>
-                            <img src="../../images/reedsolomon/table.jpg" width="80%">
+                            <img src="../../images/reedsolomon/table.png" width="80%">
                             <p>目前主流的支持SIMD相关指令的寄存器有128bit（XMM 指令)、256bit(YMM 指令)这两种容量，这意味着对于64位的机器来说，分别提供了2到4倍的处理能力，我们可以考虑采用SIMD 指令并行地为更多数据进行乘法运算。</p>
                             <p>但每个元素的乘法表的大小为 256 Byte ,这大大超出了寄存器容纳能力。为了达到利用并行查表的目的，我们采用分治的思想将两个字节的乘法运算进行拆分。</p>
                             <p>字节 y 与字节 a 的乘法运算过程可表示为，其中y(a)表示从 y 的乘法表中查询与 x 相乘结果的操作：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                y(a) = y * a
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>y(a) = y * a</code></pre>
                             </div>
                             <p>我们将字节 a 拆分成高4位（al) 与低 4 位 (ar) 两个部分，即（其中 ⊕ 为异或运算）：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                a = (al << 4) ⊕ ar
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>a = (al << 4) ⊕ ar</code></pre>
                             </div>
                             <p>这样字节 a 就表示为 0-15 与 (0-15 << 4) 异或运算的结果了。</p>
                             <p>于是原先的 y 与 a 的乘法运算可表示为：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                y(a) = y(al << 4) ⊕ y(ar)
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>y(a) = y(al << 4) ⊕ y(ar)</code></pre>
                             </div>
                             <p>由于ar 与 al 的范围均为 0-15（0-1111），字节 y 与它们相乘的结果也就只有16个可能的值了 。这样原先256 字节的字节 y 的乘法表就可以被 2 张 16 字节的乘法表替换了。</p>
                             <p>下面以根据本原多项式 x^8 + x^4 + x^3 + x^2 + 1 生成的 GF(2^8) 为例，分别通过查询普通乘法表与使用拆分乘法表来演示 16 * 100 的计算过程。</p>
                             <p>16 的完整乘法表为：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                table = [0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240 29 13 61 45 93 77 125 109 157 141 189 173 221 205 253 237 58 42 26 10 122 106 90 74 186 170 154 138 250 234 218 202 39 55 7 23 103 119 71 87 167 183 135 151 231 247 199 215 116 100 84 68 52 36 20 4 244 228 212 196 180 164 148 132 105 121 73 89 41 57 9 25 233 249 201 217 169 185 137 153 78 94 110 126 14 30 46 62 206 222 238 254 142 158 174 190 83 67 115 99 19 3 51 35 211 195 243 227 147 131 179 163 232 248 200 216 168 184 136 152 104 120 72 88 40 56 8 24 245 229 213 197 181 165 149 133 117 101 85 69 53 37 21 5 210 194 242 226 146 130 178 162 82 66 114 98 18 2 50 34 207 223 239 255 143 159 175 191 79 95 111 127 15 31 47 63 156 140 188 172 220 204 252 236 28 12 60 44 92 76 124 108 129 145 161 177 193 209 225 241 1 17 33 49 65 81 97 113 166 182 134 150 230 246 198 214 38 54 6 22 102 118 70 86 187 171 155 139 251 235 219 203 59 43 27 11 123 107 91 75]
-                            </code></pre>
-                            </div>
+                            <img src="../../images/reedsolomon/ftable.jpg" width="80%">
                             <p> 计算 16 * 100 可以直接查表得到：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                table[100] = 14
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>table[100] = 14</code></pre>
                             </div>
                             <p>16 的低4位乘法表，也就是16 与 0-15 的乘法结果：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                lowtable = [0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240]
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>lowtable = [0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240]</code></pre>
                             </div>
                             <p>16 的高4位乘法表，为16 与 0-15 << 4 的乘法结果：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                hightable = [0 29 58 39 116 105 78 83 232 245 210 207 156 129 166 187]
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>hightable = [0 29 58 39 116 105 78 83 232 245 210 207 156 129 166 187]</code></pre>
                             </div>
                             <p>将 100 （01100100）拆分，则</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                100 = 0110 << 4 ⊕ 0100
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>100 = 0110 << 4 ⊕ 0100</code></pre>
                             </div>
                             <p>在低位表中查询 0100（4），得：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                lowtable[4] = 64
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>lowtable[4] = 64</code></pre>
                             </div>
                             <p>在高位表中查询0110 （6），得：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                hightable[6] = 78
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>hightable[6] = 78</code></pre>
                             </div>
                             <p>将两个查询结果异或：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                result = 64 ^ 78 = 1000000 ^ 1001110 = 1110 = 14
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>result = 64 ^ 78 = 1000000 ^ 1001110 = 1110 = 14</code></pre>
                             </div>
                             <p>从上面的对比中，我们不难发现采用SIMD的新算法提高查表速度主要表现在两个方面：</p>
                             <ol>
@@ -130,7 +108,7 @@
                             <li>将重排后的结果进行异或，得到最终的运算结果</li>
                             </ol>
                             <p>以下是伪代码：</p>
-                            <img src="../../images/reedsolomon/code2.jpg" width="80%">
+                            <img src="http://www.templex.xyz/images/reedsolomon/code2.jpg" width="80%">
                             <p>需要注意的是，要使用SIMD加速有限域运算，对CPU的最低要求是支持SSSE3扩展指令集。另外为了充分提高效率，我们应该事先对数据进行内存对齐操作，在SSSE3下我们需要将数据对齐到16 Bytes，否则我们只能使用非对齐指令进行数据的读取和写入。在这一点上比较特殊的是Go 语言， 一方面Go支持直接调用汇编函数这为使用SIMD指令集提供了语言上的支持；但另外一方面Golang 又隐藏了内存申请的细节，这使得指定内存对齐操作不可控，虽然我们也可以通过cgo或者汇编来实现，但这增加额外的负担。所幸，对于CPU来说一个Cache line 的大小为64byte，这在一定程度上可以帮助我们减少非对齐读写带来的惩罚。另外，根据Golang 的内存对齐算法，对于较大的数据块，Golang是会自动对齐到32byte的，因此对齐或非对齐指令的执行效果是一致的。</p>
                             <h3>写缓存友好代码</h3>
                             <p>缓存优化通过两方面进行，其一是减少缓存污染；其二是提高缓存命中率。在尝试做到这两点之前，我们先来分析缓存的基本工作原理。</p>
@@ -146,9 +124,7 @@
                             <p>本节主要介绍如何利用AVX/AVX2 指令集以及指令级并行优化来进一步提高性能表现。除此之外，我们还可以对汇编代码进行微调以取得微小的提升。比如，尽量避免使用 R8-R15 这8个寄存器，因为指令解码会比其他通用寄存器多一个字节。但很多汇编优化细节是和CPU架构设计相关的，书本上甚至Intel提供的手册也并不能提供最准确的指导（因为有滞后性），而且这些操作带来的效益并不显著，在这里就不做重点说明了。</p>
                             <h4>利用AVX2</h4>
                             <p>在上文中我们已经知道如何将乘法表拆分成128bits 的大小以适应XMM寄存器，那么对于AVX指令集来说，要充分发挥其作用，需要将乘法表复制到256bit的YMM寄存器。为了做到这一点，我们可以利用XMM 寄存器为YMM 寄存器的低位这一特性，仅使用一条指令来完成表的复制（Intel 风格）：</p>
-                            <div class="highlighter-rouge"><pre class="highlight"><code>int x = 1;    // x指向内存地址A，内容是整数1
-                                vinserti128 ymm0, ymm0, xmm0, 1
-                            </code></pre>
+                            <div class="highlighter-rouge"><pre class="highlight"><code>vinserti128 ymm0, ymm0, xmm0, 1</code></pre>
                             </div>
                             <p>这条指令作用是将xmm0寄存器中的数据拷贝到ymm0中,而剩余128位数据通过ymm0得到，其中立即数 1 表明xmm0拷贝的目的地是 ymm0 的高位。这条指令提供了两个source operand（源操作数）以及一个destination operand（目标操作数），我们在这里使用ymm0寄存器同时作为源操作数和目标操作数来实现了表的复制操作。接下来我们便可以使用与SSSE3下同样的方式来进行单指令32byte的编码运算过程了。</p>
                             <p>由于使用了SSE与AVX这两种扩展指令集，我们需要避免 AVX-SSE Transition Penalties[3]。之所以会有这种性能惩罚主要是由于SSE指令对YMM寄存器的高位一无所知，SSE指令与AVX指令的混用会导致机器不断的执行YMM寄存器的高位保存与恢复，这大大影响了性能表现。如果对指令不熟悉，难以避免指令混用，那么可以在RET前使用VZEROUPPER指令来清空YMM寄存器的高位。</p>
