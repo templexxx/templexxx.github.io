@@ -43,8 +43,7 @@
                             <p>那么证明工作转化为：小于等于 a-1 行（来自 gen matrix）中的元素是否可以分别构成另外 1 行来自（ gen matrix）中的 a 个元素。</p>
                             <h3>Vandermonde</h3>
                             <p>对于 Vandermonde matrix 来说，每一行的首项为 1 , 因此问题变成小于等于 a-1 行（来自 gen matrix）中的元素可以分别构成另外 1 行来自（ gen matrix）中的 a-1 个非行首项元素。</p>
-                            <p>很显然的是，上面的要求对于任意由非零元素构成的矩阵都是成立的。因此 Vandermonde matrix 不满足我们的要求。</p>
-                            <p>下面来考察最简单的情况，即试图找到在某两行 Vandermonde matrix 中某列的元素相等的等价关系，即：</p>
+                            <p>很显然的是，上面的要求对于任意由非零元素构成的矩阵都是成立的。只不过 vandermonde matrix 有其生成规律，任意行首项为 1 则规定了这种构成关系必须为直接相等，问题转化为：</p>
                             <img src="../../images/cauchy/b.jpg" width="20%">
                             <p>有限域元素均为本原多项式的幂，设本原多项式为 p ,则：</p>
                             <img src="../../images/cauchy/p.jpg" width="20%">
@@ -58,7 +57,7 @@
                             <h3>Cauchy</h3>
                             <p>跟上面的过程类似，只不过柯西矩阵中任意行或任意列的元素均不相等，因此我们需要求：</p>
                             <p>小于等于 a-1 行（来自 gen matrix）中的元素可以构成另外 1 行来自（ gen matrix）中的 a 个元素。</p>
-                            <p>这就要求在 cauchy matrix 中某两行中某两列呈现如下关系（即某一行在乘法运算中得到另外一行两个元素）：</p>
+                            <p>这要求在 cauchy matrix 中某两行中某两列呈现如下关系（即某一行在乘法运算中得到另外一行两个元素）：</p>
                             <img src="../../images/cauchy/cauchy.jpg" width="50%">
                             <p>化简得:</p>
                             <img src="../../images/cauchy/xy.jpg" width="20%">
