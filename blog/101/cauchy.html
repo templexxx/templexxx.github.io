@@ -1,0 +1,77 @@
+<html>
+    <head>
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+
+        <title>关于RS编码中生成矩阵的证明</title>
+
+    </head>
+
+    <body>
+        <div style="margin: 2% 5% 2% 5%">
+            <table width="80%">
+                <tr>
+                    <td width="60%">
+                        <div style="padding: 2% 8% 5% 8%; border: 1px solid LightGrey;">
+                            <h2>Cauchy or Vandermonde?</h2>
+                            <h3>Encode Matrix</h3>
+                            <p>Encode Matrix的形式如下（如果满足systematic codes）：</p>
+                            <ol>
+                            <li>(n + m) × n matrix</li>
+                            <li>前 n 行是单位矩阵</li>
+                            <li>任意删除 m 行得到的矩阵可逆</li>
+                            </ol>
+                            <h3>一般生成方法</h3>
+                            <ol>
+                            <li>首先选择1个线性无关的矩阵，比较经典的是Vandermonde matrixx</li>
+                            <li>进行消元，使得前 n 行为单位阵。由于消元后矩阵性质不变，因此每一行依然线性无关</li>
+                            </ol>
+                            <h3>懒惰生成方法</h3>
+                            <ol>
+                            <li>生成 n 行单位矩阵</li>
+                            <li>拼接 m 行线性无关矩阵</li>
+                            </ol>
+                            <p>看似懒惰的方法没有什么大问题并且省去了消元的步骤，但真的是这样吗？</p>
+                            <p>本文的主要内容就是证明懒惰方法下矩阵的性质问题。通常，我们会选用 Vandermonde matrix 或者 Cauchy matrix 来做为拼接部分，因此接下来就对这两种矩阵的性质进行探讨。</p>
+                            <h3>当删除任意 m 行会发生什么？</h3>
+                            <p>删除任意 m 行后，我们会得到一个 n × n 的方阵，在这个方阵中有若干单位矩阵的行和若干生成矩阵（gen matrix) 的行</p>
+                            <p>接下来我们来考察该方阵的秩。</p>
+                            <p>首先可以肯定的是，单位矩阵的部分的秩等于其行数，并且 1 所在的列可以构成生成矩阵中任意行相应的列元素。</p>
+                            <p>我们假定在该方阵中包含 a 行生成矩阵，若矩阵的秩小于 n （存在线性相关），则小于等于 a-1 行（来自 gen matrix）中的元素可以分别构成另外 1 行来自（ gen matrix）中的 a 个元素</p>
+                            <p>那么证明工作转化为：小于等于 a-1 行（来自 gen matrix）中的元素是否可以分别构成另外 1 行来自（ gen matrix）中的 a 个元素。</p>
+                            <h3>Vandermonde</h3>
+                            <p>对于 Vandermonde matrix 来说，每一行的首项为 1 , 因此问题变成小于等于 a-1 行（来自 gen matrix）中的元素可以分别构成另外 1 行来自（ gen matrix）中的 a-1 个非行首项元素。</p>
+                            <p>很显然的是，上面的要求对于任意由非零元素构成的矩阵都是成立的。因此 Vandermonde matrix 不满足我们的要求。</p>
+                            <p>下面来考察最简单的情况，即试图找到在某两行 Vandermonde matrix 中某列的元素相等的等价关系，即：</p>
+                            <img src="../../images/cauchy/b.jpg" width="20%">
+                            <p>有限域元素均为本原多项式的幂，设本原多项式为 p ,则：</p>
+                            <img src="../../images/cauchy/p.jpg" width="20%">
+                            <p>由上式得：</p>
+                            <img src="../../images/cauchy/mod.jpg" width="40%">
+                            <p>即：</p>
+                            <img src="../../images/cauchy/mod2.jpg" width="30%">
+                            <p>令 λ = 1 ：</p>
+                            <img src="../../images/cauchy/find.jpg" width="30%">
+                            <p>只要找到满足以上关系的参数就可以找到不可逆的情况了，所以用偷懒的方法使用 vandermonde matrix 是可能碰到问题的。</p>
+                            <h3>Cauchy</h3>
+                            <p>跟上面的过程类似，只不过柯西矩阵中任意行或任意列的元素均不相等，因此我们需要求：</p>
+                            <p>小于等于 a-1 行（来自 gen matrix）中的元素可以构成另外 1 行来自（ gen matrix）中的 a 个元素。</p>
+                            <p>这就要求在 cauchy matrix 中某两行中某两列呈现如下关系（即某一行在乘法运算中得到另外一行两个元素）：</p>
+                            <img src="../../images/cauchy/cauchy.jpg" width="50%">
+                            <p>化简得:</p>
+                            <img src="../../images/cauchy/xy.jpg" width="20%">
+                            <p>这显然是矛盾的。</p>
+                            <h3>结论</h3>
+                            <p>Cauchy Matrix ，省时省力</p>
+                            <p>Cauchy Matrix ，放心安全</p>
+                        </div>
+
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+
+</html>
