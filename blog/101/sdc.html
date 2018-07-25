@@ -46,7 +46,7 @@
                             <p>在本小节点中，我们将根据上文的分类去分析 SDC 出现的场景以及预防机制。</p>
                             <h4>网络流</h4>
                             <p>在应用层之下，我们已经拥有 switch 的 CRC32 与 TCP Checksum 的防护机制，然而数据经流的每一台 switch 都会重新计算 CRC32 (除非是两台机器简单的通过一台 switch 相连)，也就是说，目前我们拥有的机制无法避免 switch 内部错误。如果经过了路由，情况会变得更加复杂。 TCP Checksum 的设计目标之一就是为了预防这样的错误，但其强度太低，不足以胜任这样的任务。[4]</p>
-                            <img src="../../images/sdc/switch.png" width="80%">
+                            <img src="../../images/sdc/switch.png" width="40%">
                             <p>CRC32 与 Adler32 (Fletcher 的替代品) 的设计目的都是为了做以太网 frame (around 1500B) 的校验，其中 Adler32 的强度还要低于 Fletcher32[5]</p>
                             <p>我们所需要考察的是，在较大的数据尺度上（校验在应用层上做），这两种算法能否满足我们提高系统可靠性的要求。</p>
 
@@ -106,7 +106,7 @@
                             <p>副本集群采用最终一致性的策略要预防 SDC。对于多个副本来说，同时发生写错误的概率微乎其微。因此我们在读时校验，在校验失败后锁定相应磁盘即可。</p>
                             <p>需要注意的是，将原始数据与摘要分开存放并不能处理 misdirected writes 错误。</p>
                             <p>对于我们所使用的 xfs 文件系统来说，由于其开启了 metadata 保护，因此文件系统层面很难出现 misdirected 错误。因此，倘若我们要进行 misdirected writes 保护，只需要在原先的 checksum 前加上该数据在大文件块中的偏移量即可。偏移量一致且能返回数据和 checksum 的概率几乎可以忽略不计（在数据错误的情况下)</p>
-                            <img src="../../images/sdc/checksum.png" width="80%">
+                            <img src="../../images/sdc/checksum.png" width="40%">
                             <p>特别需要说明的是 lost writes 错误，lost writes 的应对方案主要有两种：</p>
                             <ol>
                                 <li>read-after-write</li>
