@@ -1,0 +1,158 @@
+<html xmlns="http://www.w3.org/1999/html">
+    <head>
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+
+        <title>Go & Assembly</title>
+
+    </head>
+
+    <body>
+        <div style="margin: 2% 5% 2% 5%">
+            <table width="80%">
+                <tr>
+                    <td width="60%">
+                        <div style="padding: 2% 8% 5% 8%; border: 1px solid LightGrey;">
+                            <h2>Go & Assembly</h2>
+                            <p>尽管 Go 是一门很年轻的语言，但如果想要深入了解其 runtime， 标准库实现等细节，网上会有大把的资料可以参阅。如果是想了解更多偏实践的内容，那学习材料就更数不胜数了。这些问题也是大家平时关注最多的。可我为什么偏偏要讲汇编呢？而且还是 Go 的汇编？</p>
+                            <h3>Go & Assembly, why?</h3>
+                            <p>首先我们来谈谈汇编。通过汇编，我们可以揭开很多计算机世界的神秘面纱，比如了解 CPU 的指令执行，了解编译器的优化，了解一些算法的设计原理等等。光这几点就足以让不少人感到兴奋了。</p>
+                            <p>那么为什么选择 Go 语言的汇编呢？原因非常简单直接：</p>
+                            </p> Go 几乎是汇编入门最简单的语言。</p>
+                            <p>我来解释一下为什么下这样一个结论：</p>
+                            <ol>
+                            <li>Go 的汇编不能单独工作，需要 Go 函数申明，入口清晰易懂</li>
+                            <li>Go 封装了大把伪寄存器，非常犀利，使得我们不容易写出错误的汇编代码</li>
+                            <li>Go 标准库中有大量汇编函数，方便参考和学习</li>
+                            </ol>
+                            <p>作为一名工程师，我对 Go 汇编最大的兴趣在如何利用汇编优化我的代码，这也是本文的中心，即 “利用 Go 汇编进行算法加速”。</p>
+                            <img src="../../images/goasm2/faster.png" width="40%">
+
+                            <h3>Hello Bombs!!!</h3>
+                            <p>为了不落窠臼，让我们从 “Hello Bombs!!!” ，而不是 “Hello world!” 来入手 Go 汇编。废话不多说，先上源码( MacOS):</p>
+                            <img src="../../images/goasm2/hellobombs.png" width="40%">
+                            <p>为了调用 Hello 这个函数，我们还需要对它做一个函数申明：</p>
+                            <img src="../../images/goasm2/hellofunc.png" width="40%">
+                            <p>现在，我们就可以调用 Hello 函数，输出 “Hello Bombs!!!” 了。</p>
+                            <p>其实上面的汇编代码的意义非常简单：</p>
+                            <ol>
+                                <li>声明字符串</li>
+                                <li>系统调用（依赖操作系统），打印字符串</li>
+                            </ol>
+                            <p>然而，这么简单的事情用汇编做实在令人脑壳生疼。这也绝不是我们学习汇编的最终用途，因此我也不在汇编函数的细节中纠缠了，更多的注意事项可以参阅 Go 的官方文档。</p>
+                            <p>我这里放一个 “Hello Bombs!!!” 主要是让大家体味一下初恋的感觉——被炸弹炸洗礼过一般 :D</p>
+
+                            <h3>二十行代码打败标准库</h3>
+                            <p>memmove 在 Go 中相当的重要，比如 copy 函数实际上就是 memmove 的封装。如果我们看其实现，会发现洋洋洒洒的 500 多行汇编代码，一看就很高级，一看就很极致，当然没什么人会坚持去看第二眼。</p>
+                            <p>继续先上代码：</p>
+                            <img src="../../images/goasm2/mmove.png" width="40%">
+                            <p>算上空行，刚好 20 行。</p>
+                            <p>这是 copy 函数(old) doAVX2(new) 执行 512B 拷贝的 Benchmark 结果比较：</p>
+                            <p>name  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;old &nbsp;time/op  &nbsp;new time/op  &nbsp;delta</p>
+                            <p> Copy512B-8  12.8ns ± 8%  10.8ns ±11%  -16.08%  (p=0.016 n=5+5)</p>
+                            <p>doAVX2 取得了微弱的领先。</p>
+                            <p>下面我们来探究这个领先是如何产生的，以及它的意义在哪。先说不足：</p>
+                            <ol>
+                                <li>首先 doAVX2 过于简陋，没有实现 copy 字节数的返回值</li>
+                                <li>无法执行不对齐到 128B 的 memmove</li>
+                                <li>对于很大尺寸的内存拷贝，没有做 Non-Temporal Store，污染了 Cache</li>
+                            </ol>
+                            <p>doAVX2 的工作原理：</p>
+                            <ol>
+                                <li>维护了一个 offset(AX register) 来实现地址偏移</li>
+                                <li>使用了循环展开优化流水</li>
+                                <li>利用了 AVX2 指令 VMOVDQU 一次移动 32Bytes</li>
+                            </ol>
+                            <p>很显然，这一个小小的函数不能说明什么，也不能直接投入生产实践，更多的是提高我们的开心程度，以便探索的持续。</p>
+
+                            <h4>“正统” 的 memmove 是如何工作的？</h4>
+                            <p>现在我们来一同研究一下标准库中的 memmove。</p>
+                            <p>尽管看上去代码逻辑异常复杂，但抛开冗余，其核心如下：</p>
+                            <ol>
+                                <li>在不同的数据长度上选择最合适的指令</li>
+                                <li>充分利用 CPU 流水线</li>
+                                <li>丰富的 cache 优化技巧，充分利用 I/O 带宽</li>
+                            </ol>
+                            <p>关于第一点，需要大量的指令说明，这里就不展开了，也不是我们把玩的重点。</p>
+                            <p>第二点最明显的体现是 循环展开，也不再赘述。</p>
+                            <p>第三点在 < CPU, A Programmer's Perspective > 中的“缓存”部分有相对详细的介绍。在 memmove 主要是运用了 prefetch, 缓存穿透 这两种技巧。</p>
+
+                            <h3>每秒处理 200GB 数据的异或运算</h3>
+                            <p>在领略了内存拷贝的风光之后，我们再看看加一点运算会发生什么。</p>
+                            <p>在数据处理中，XOR 几乎是最为简单的了，那么我们便拿它小试牛刀。</p>
+                            <p>话不多说，先上代码：</p>
+                            <img src="../../images/goasm2/xor0.png" width="40%">
+                            <p></p>
+                            <img src="../../images/goasm2/xor1.png" width="40%">
+                            <p></p>
+                            <img src="../../images/goasm2/xor2.png" width="40%">
+                            <p></p>
+                            <img src="../../images/goasm2/xor3.png" width="40%">
+                            <p>大家别看函数长，实际做的事情非常简单。就是将 src 中的二维 slice 进行 XOR 运算，将结果保存在 dst 中。汇编代码就是这样，非常简单的事，我们都需要冗长的代码来实现它。</p>
+                            <p>让我们一起来梳理一下函数的基本逻辑：</p>
+                            <ol>
+                                <li>先 backward 的处理不对齐部分（ loop_1b, loop_8b)</li>
+                                <li>在 forward 的处理对齐部分 (loop256b)</li>
+                            </ol>
+                            <p>其中还运用了 AVX512 的指令来加速运算。性能是非常卓越的[1]：</p>
+                            <img src="../../images/goasm2/xorperf.png" width="40%">
+                            <p>不难发现，随着数据 size 的增长，速度有了明显的下降。这是因为 CPU Cache hold 不住啦！</p>
+
+                            <h3>阶段性小结</h3>
+                            <p>在我们利用汇编为 Go 加速时，所运用的基本手段无非就只有两个：</p>
+                            <ol>
+                                <li>SIMD</li>
+                                <li>Cache 优化</li>
+                            </ol>
+                            <p>那么什么时候该 “宝刀出鞘” 呢：</p>
+                            <ol>
+                                <li>当连续数据需要进行相同运算时</li>
+                                <li>且当前库没有做 SIMD 优化，或支持的指令不够丰富，逻辑不够简洁</li>
+                            </ol>
+                            <p>看到没，原则就是这么简单。为了更好的举栗子，我向 Go 提交了一个小修改[2]。merge 与否无关紧要，主要是为了给大家一个例子。</p>
+
+                            <h3>Go 的 SIMD 支持</h3>
+                            <p>在上文中，我们提到加速运算的核心之一是 SIMD 技术，那么 Go 为此给我们提供了多少便利呢？</p>
+                            <h4>CPU Feature</h4>
+                            <p>在标准库 internal/cpu 中，我们可以拿到几乎所有的指令支持情况。但是有两个问题：</p>
+                            <ol>
+                                <li>没有 AVX512 支持</li>
+                                <li>无法在自己的代码中使用</li>
+                            </ol>
+                            <p>那么，我们要做的事情就很简单了：</p>
+                            <ol>
+                                <li>首先将 internal/cpu 代码复制出来</li>
+                                <li>添加 AVX512 detect</li>
+                            </ol>
+                            <p>这个微小的工作，我已经做了[2]</p>
+
+                            <h4>anames</h4>
+                            <p>由于 Go 的汇编语法和我们平时见到的不同，它自己也做了不少抽象和封装，为了寻求已支持的指令，我们可以在 anames.go 文件中找到答案。</p>
+                            <p>在最新版本的 Go 中，已经新添加了大量指令，包括目前标准库尚未用到的 AVX512。但有些陈年老指令就没那么幸运被添加进来了。</p>
+                            <p>如没有 SSE2 的 MOVNTDQ 指令，因此我的代码只能这样写：</p>
+                            <img src="../../images/goasm2/sse2m.png" width="40%">
+                            <p>这种只有机器能看懂的代码怎么写出来呢？途径有二：</p>
+                            <ol>
+                                <li>利用 YASM 等编译器编译你的指令</li>
+                                <li>利用 asm2plan9s 工具实现（实际也依赖编译器）[3]</li>
+                            </ol>
+
+                            <h3>结束语</h3>
+                            <p>RET</p>
+
+                            <h3>附录</h3>
+                            <ol>
+                                <li>xor: https://github.com/templexxx/xorsimd</li>
+                                <li>cpu feature: https://github.com/templexxx/cpu</li>
+                                <li>asm2plan9s: https://github.com/minio/asm2plan9s</li>
+                            </ol>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+
+</html>
