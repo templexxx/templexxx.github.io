@@ -2,8 +2,8 @@
     <head>
 
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <link href="http://www.templex.xyz/main.css" rel="stylesheet" type="text/css">
-        <link rel="shortcut icon" href="http://www.templex.xyz/images/3x3.jpg">
+        <link href="../../main.css" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../../images/3x3.jpg">
 
         <title>实现高性能纠删码引擎</title>
 
@@ -108,7 +108,7 @@
                             <li>将重排后的结果进行异或，得到最终的运算结果</li>
                             </ol>
                             <p>以下是伪代码：</p>
-                            <img src="http://www.templex.xyz/images/reedsolomon/code2.jpg" width="80%">
+                            <img src="../../images/reedsolomon/code2.jpg" width="80%">
                             <p>需要注意的是，要使用SIMD加速有限域运算，对CPU的最低要求是支持SSSE3扩展指令集。另外为了充分提高效率，我们应该事先对数据进行内存对齐操作，在SSSE3下我们需要将数据对齐到16 Bytes，否则我们只能使用非对齐指令进行数据的读取和写入。在这一点上比较特殊的是Go 语言， 一方面Go支持直接调用汇编函数这为使用SIMD指令集提供了语言上的支持；但另外一方面Golang 又隐藏了内存申请的细节，这使得指定内存对齐操作不可控，虽然我们也可以通过cgo或者汇编来实现，但这增加额外的负担。所幸，对于CPU来说一个Cache line 的大小为64byte，这在一定程度上可以帮助我们减少非对齐读写带来的惩罚。另外，根据Golang 的内存对齐算法，对于较大的数据块，Golang是会自动对齐到32byte的，因此对齐或非对齐指令的执行效果是一致的。</p>
                             <h3>写缓存友好代码</h3>
                             <p>缓存优化通过两方面进行，其一是减少缓存污染；其二是提高缓存命中率。在尝试做到这两点之前，我们先来分析缓存的基本工作原理。</p>
